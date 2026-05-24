@@ -1,5 +1,5 @@
 import { createClient } from "jsr:@supabase/supabase-js@2.49.8";
-import * as kv from "../make-server-1f7adb85/kv_store.tsx";
+import * as kv from "../make-server-1f7adb85/kv_store.ts";
 
 const BUCKET = "make-1f7adb85-rive";
 const MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000; // 30 days

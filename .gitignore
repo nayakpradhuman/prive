@@ -9,3 +9,7 @@ dist/
 
 # Figma Make design screenshots — not needed for deployment
 src/imports/
+
+# Supabase CLI temp files
+supabase/.temp/
+.vercel

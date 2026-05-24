@@ -1,8 +1,7 @@
 [project]
-# Set this to your Supabase project ref (found in Project Settings → General)
-# Run: supabase link --project-ref <YOUR_PROJECT_REF>
+# Set this to your Supabase project ref after running: supabase link --project-ref <ref>
 # project_id = "your-project-ref"
 
-[functions.cleanup]
-# Runs daily at 03:00 UTC — deletes sessions older than 30 days
-schedule = "0 3 * * *"
+# Note: the cleanup function runs on a daily schedule.
+# Set it up in the Supabase dashboard under Edge Functions → cleanup → Schedule
+# or via pg_cron after deployment.
