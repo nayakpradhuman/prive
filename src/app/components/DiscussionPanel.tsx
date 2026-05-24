@@ -10,10 +10,10 @@ function fmtTime(ts: number) {
 
 function getMyUserId(): string {
   const key = 'prive-user-id';
-  let id = localStorage.getItem(key);
+  let id = sessionStorage.getItem(key);
   if (!id) {
     id = crypto.randomUUID().slice(0, 16);
-    localStorage.setItem(key, id);
+    sessionStorage.setItem(key, id);
   }
   return id;
 }
