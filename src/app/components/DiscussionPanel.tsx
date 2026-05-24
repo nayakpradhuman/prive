@@ -8,6 +8,16 @@ function fmtTime(ts: number) {
   return new Date(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 }
 
+function getMyUserId(): string {
+  const key = 'prive-user-id';
+  let id = localStorage.getItem(key);
+  if (!id) {
+    id = crypto.randomUUID().slice(0, 16);
+    localStorage.setItem(key, id);
+  }
+  return id;
+}
+
 function renderText(text: string) {
   const parts = text.split(/(\/?[\w.]+|@[\w.]+|#[\w.]+)/g);
   return parts.map((part, i) => {
@@ -55,23 +65,27 @@ function buildOptions(info: RiveFileInfo) {
 }
 
 // ── Comment component ────────────────────────────────────────────
-function Comment({ comment, onDelete }: { comment: DiscussionComment; onDelete: () => void }) {
+function Comment({ comment, isMine, onDelete }: { comment: DiscussionComment; isMine: boolean; onDelete: () => void }) {
   return (
-    <div className="disc-comment">
-      <div className="disc-comment-text">{renderText(comment.text)}</div>
-      {comment.voiceNotes.map((n, i) => (
-        <div key={n.id} className="disc-vn">
-          <span className="disc-vn-icon">
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
-              <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
-            </svg>
-          </span>
-          <audio className="disc-vn-audio" src={n.url} controls />
-          <span className="disc-vn-dur">{Math.floor(n.duration / 60)}:{String(n.duration % 60).padStart(2, '0')}</span>
-        </div>
-      ))}
+    <div className={`disc-comment ${isMine ? 'disc-comment--mine' : 'disc-comment--other'}`}>
+      {!isMine && <span className="disc-comment-who">Other</span>}
+      <div className="disc-comment-bubble">
+        {comment.text ? <div className="disc-comment-text">{renderText(comment.text)}</div> : null}
+        {comment.voiceNotes.map((n) => (
+          <div key={n.id} className="disc-vn">
+            <span className="disc-vn-icon">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+                <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+              </svg>
+            </span>
+            <audio className="disc-vn-audio" src={n.url} controls />
+            <span className="disc-vn-dur">{Math.floor(n.duration / 60)}:{String(n.duration % 60).padStart(2, '0')}</span>
+          </div>
+        ))}
+      </div>
       <div className="disc-comment-meta">
+        {isMine && <span className="disc-comment-who disc-comment-who--mine">You</span>}
         <span className="disc-comment-time">{fmtTime(comment.createdAt)}</span>
         <button className="disc-comment-del" onClick={onDelete} title="Delete">
           <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
@@ -84,9 +98,10 @@ function Comment({ comment, onDelete }: { comment: DiscussionComment; onDelete: 
 }
 
 // ── Thread component ─────────────────────────────────────────────
-function Thread({ thread, info, onUpdate, onDelete, uploadBlob }: {
+function Thread({ thread, info, myUserId, onUpdate, onDelete, uploadBlob }: {
   thread: DiscussionThread;
   info: RiveFileInfo;
+  myUserId: string;
   onUpdate: (t: DiscussionThread) => void;
   onDelete: () => void;
   uploadBlob?: (id: string, blob: Blob) => Promise<string>;
@@ -107,7 +122,7 @@ function Thread({ thread, info, onUpdate, onDelete, uploadBlob }: {
   const addComment = () => {
     if (!commentText.trim() && commentVoices.length === 0) return;
     const comment: DiscussionComment = {
-      id: uid(), text: commentText.trim(), voiceNotes: commentVoices, createdAt: Date.now(),
+      id: uid(), authorId: myUserId, text: commentText.trim(), voiceNotes: commentVoices, createdAt: Date.now(),
     };
     onUpdate({ ...thread, comments: [...thread.comments, comment] });
     setCommentText('');
@@ -196,7 +211,7 @@ function Thread({ thread, info, onUpdate, onDelete, uploadBlob }: {
           {thread.comments.length > 0 && (
             <div className="disc-comments">
               {thread.comments.map(c => (
-                <Comment key={c.id} comment={c} onDelete={() => deleteComment(c.id)} />
+                <Comment key={c.id} comment={c} isMine={c.authorId === myUserId} onDelete={() => deleteComment(c.id)} />
               ))}
             </div>
           )}
@@ -228,7 +243,7 @@ function Thread({ thread, info, onUpdate, onDelete, uploadBlob }: {
 }
 
 // ── Compose new thread ───────────────────────────────────────────
-function ComposeThread({ info, onAdd, uploadBlob }: { info: RiveFileInfo; onAdd: (t: DiscussionThread) => void; uploadBlob?: (id: string, blob: Blob) => Promise<string> }) {
+function ComposeThread({ info, myUserId, onAdd, uploadBlob }: { info: RiveFileInfo; myUserId: string; onAdd: (t: DiscussionThread) => void; uploadBlob?: (id: string, blob: Blob) => Promise<string> }) {
   const [open, setOpen] = useState(false);
   const [text, setText] = useState('');
   const [voices, setVoices] = useState<VoiceNote[]>([]);
@@ -239,6 +254,7 @@ function ComposeThread({ info, onAdd, uploadBlob }: { info: RiveFileInfo; onAdd:
     const entity = parseEntityFromText(text, info);
     const thread: DiscussionThread = {
       id: uid(),
+      authorId: myUserId,
       ...entity,
       annotationText: text.trim(),
       annotationVoiceNotes: voices,
@@ -302,6 +318,8 @@ interface Props {
 }
 
 export function DiscussionPanel({ threads, info, onThreadsChange, uploadBlob, mobileOpen, onMobileClose }: Props) {
+  const myUserId = getMyUserId();
+
   const updateThread = (id: string, updated: DiscussionThread) =>
     onThreadsChange(threads.map(t => t.id === id ? updated : t));
 
@@ -354,6 +372,7 @@ export function DiscussionPanel({ threads, info, onThreadsChange, uploadBlob, mo
                   key={thread.id}
                   thread={thread}
                   info={info}
+                  myUserId={myUserId}
                   onUpdate={updated => updateThread(thread.id, updated)}
                   onDelete={() => deleteThread(thread.id)}
                   uploadBlob={uploadBlob}
@@ -370,7 +389,7 @@ export function DiscussionPanel({ threads, info, onThreadsChange, uploadBlob, mo
           <span className="disc-compose-zone-label-line" style={{ background: 'var(--bg-4)' }} />
         </div>
         <div className="disc-compose-inner">
-          <ComposeThread info={info} onAdd={addThread} uploadBlob={uploadBlob} />
+          <ComposeThread info={info} myUserId={myUserId} onAdd={addThread} uploadBlob={uploadBlob} />
         </div>
       </div>
     </div>

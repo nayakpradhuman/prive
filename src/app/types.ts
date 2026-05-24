@@ -33,6 +33,7 @@ export type DiscussionEntityType = 'file' | 'artboard' | 'sm' | 'input';
 
 export interface DiscussionComment {
   id: string;
+  authorId?: string;
   text: string;
   voiceNotes: VoiceNote[];
   createdAt: number;
@@ -40,6 +41,7 @@ export interface DiscussionComment {
 
 export interface DiscussionThread {
   id: string;
+  authorId?: string;
   entityType: DiscussionEntityType | null;
   entityKey: string | null;   // 'file' | artboardName | 'ab::sm' | 'ab::sm::input'
   entityLabel: string;
