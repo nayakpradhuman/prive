@@ -442,7 +442,7 @@ button { font-family:inherit; cursor:pointer; }
 @media(max-width:640px) { .disc-compose-form { grid-template-columns:1fr; } }
 
 /* Threads grid in full-width panel */
-.disc-threads-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(360px,1fr)); }
+.disc-threads-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(360px,1fr)); }
 
 /* Thread */
 .disc-thread { border-bottom:1px solid var(--line); border-right:1px solid var(--line); }
