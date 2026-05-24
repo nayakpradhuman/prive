@@ -1,0 +1,8 @@
+[project]
+# Set this to your Supabase project ref (found in Project Settings → General)
+# Run: supabase link --project-ref <YOUR_PROJECT_REF>
+# project_id = "your-project-ref"
+
+[functions.cleanup]
+# Runs daily at 03:00 UTC — deletes sessions older than 30 days
+schedule = "0 3 * * *"
