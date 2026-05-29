@@ -11,6 +11,18 @@ export interface RiveEventInfo {
   type: 'general' | 'openUrl';
 }
 
+export interface RiveDataPropInfo {
+  name: string;
+  dataType: string; // matches DataType enum: 'string'|'number'|'boolean'|'color'|'trigger'|'enumType'|'viewModel'|'list'|'image'|'artboard'|etc.
+}
+
+export interface RiveViewModelInfo {
+  name: string;
+  instanceCount: number;
+  instanceNames: string[];
+  properties: RiveDataPropInfo[];
+}
+
 export interface RiveFileInfo {
   fileName: string;
   fileSize: number;
@@ -20,6 +32,7 @@ export interface RiveFileInfo {
   animationsByArtboard: Record<string, string[]>;
   eventsByArtboard: Record<string, RiveEventInfo[]>;
   textRunsByArtboard: Record<string, string[]>;
+  viewModels: RiveViewModelInfo[];
 }
 
 export interface VoiceNote {
@@ -53,7 +66,7 @@ export interface DiscussionThread {
   createdAt: number;
 }
 
-export type CodeFramework = 'react' | 'js' | 'flutter' | 'swift' | 'kotlin' | 'html';
+export type CodeFramework = 'react' | 'rn' | 'js' | 'flutter' | 'swift' | 'kotlin' | 'html';
 
 export type BgMode = 'auto' | 'white' | 'black';
 export type Align = 'tl'|'tc'|'tr'|'ml'|'mc'|'mr'|'bl'|'bc'|'br';

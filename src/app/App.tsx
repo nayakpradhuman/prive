@@ -291,6 +291,12 @@ export default function App() {
                   <span>{Object.values(riveInfo.stateMachinesByArtboard).flat().length} SMs</span>
                   <span>·</span>
                   <span>{allInputs.length} inputs</span>
+                  {riveInfo.viewModels.length > 0 && (
+                    <>
+                      <span>·</span>
+                      <span>{riveInfo.viewModels.length} ViewModel{riveInfo.viewModels.length !== 1 ? 's' : ''}</span>
+                    </>
+                  )}
                 </div>
               )}
             </div>

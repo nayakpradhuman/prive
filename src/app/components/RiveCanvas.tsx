@@ -1,6 +1,6 @@
 import { useEffect, useRef, useCallback, useState } from 'react';
 import { Rive, StateMachineInputType, EventType, Layout, Fit, Alignment } from '@rive-app/webgl2';
-import { RiveFileInfo, RiveInputInfo, RiveEventInfo } from '../types';
+import { RiveFileInfo, RiveInputInfo, RiveEventInfo, RiveViewModelInfo } from '../types';
 
 const ALIGN_MAP: Record<string, Alignment> = {
   tl: Alignment.TopLeft,    tc: Alignment.TopCenter,    tr: Alignment.TopRight,
@@ -100,7 +100,46 @@ export function RiveCanvas({ buffer, artboard, stateMachine, align = 'mc', fit =
           }
         }
 
-        onInfoExtracted({ artboards, stateMachinesByArtboard, animationsByArtboard, inputsByStateMachine, eventsByArtboard, textRunsByArtboard });
+        // Extract ViewModels (data binding — replaces inputs in future)
+        // ViewModel.properties returns raw WASM enum objects for `type`; probe
+        // by name below to get reliable string type names (done at bind time in
+        // ControlsCard). Here we only record property names for code generation.
+        const viewModels: RiveViewModelInfo[] = [];
+        const vmCount = r.viewModelCount ?? 0;
+        for (let vi = 0; vi < vmCount; vi++) {
+          const vm = r.viewModelByIndex(vi);
+          if (!vm) continue;
+          // Resolve raw WASM DataType enum → string name.
+          // The type field may be an Emscripten enum object or a string depending
+          // on the runtime version. We normalise via all known approaches.
+          const DTYPE_NUMERIC: Record<number, string> = {
+            0:'none',1:'string',2:'number',3:'boolean',
+            4:'color',5:'list',6:'enumType',7:'trigger',
+            8:'viewModel',9:'integer',10:'listIndex',11:'image',12:'artboard',
+          };
+          const KNOWN_STRINGS = new Set(Object.values(DTYPE_NUMERIC));
+          const resolveType = (raw: any): string => {
+            if (typeof raw === 'string' && KNOWN_STRINGS.has(raw)) return raw;
+            if (typeof raw === 'number') return DTYPE_NUMERIC[raw] ?? 'unknown';
+            if (raw && typeof raw === 'object') {
+              if (typeof raw.value === 'number') return DTYPE_NUMERIC[raw.value] ?? 'unknown';
+              const s = String(raw);
+              if (KNOWN_STRINGS.has(s)) return s;
+            }
+            return 'unknown';
+          };
+          viewModels.push({
+            name: vm.name,
+            instanceCount: vm.instanceCount ?? 0,
+            instanceNames: (vm as any).instanceNames ?? [],
+            properties: ((vm as any).properties ?? []).map((p: any) => ({
+              name: p.name,
+              dataType: resolveType(p.type),
+            })),
+          });
+        }
+
+        onInfoExtracted({ artboards, stateMachinesByArtboard, animationsByArtboard, inputsByStateMachine, eventsByArtboard, textRunsByArtboard, viewModels });
         onRiveReady(r);
         r.resizeDrawingSurfaceToCanvas();
       },
